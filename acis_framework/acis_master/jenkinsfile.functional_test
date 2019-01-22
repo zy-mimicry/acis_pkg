@@ -1,0 +1,131 @@
+#! /usr/bin/env groovy
+
+// ACIS Pipeline
+
+def real_body(platform){
+
+    node(platform){
+
+        def workspace = pwd()
+
+        println "${workspace}"
+
+        def username
+        wrap([$class: 'BuildUser']) {
+            username = env.BUILD_USER_ID
+            println "username: ${username}"
+        }
+        env.username = username
+
+        def display_job = "${env.username} ${currentBuild.number}"
+        currentBuild.displayName = "${display_job}"
+
+        stage("master_envs_parser"){
+
+            println "workspace: ${workspace}"
+            sh 'hostname'
+
+            def m = load "${workspace}/master_envs_parser_f.groovy"
+            m.strip_and_export()
+            m.show()
+        }
+
+        stage('master_job_monitor'){
+            //sh "python3 ${workspace}/master_job_monitor.py"
+            println "--- Jenkins Master monitor stage. Hook"
+        }
+
+        def log_and_report
+        stage('master_dispatcher'){
+            master_nfs_home = "/home/rex/nfs_acis"
+            userhome = "/home/rex/nfs_acis/Functional_Test/${env.username}"
+
+            sub_dirs = "acis_testcases,loop_test,fw_image,log_and_report"
+            sh "${workspace}/master_check_or_construct.py -d ${userhome} -s ${sub_dirs}"
+
+            def testcases_root = "${userhome}/acis_testcases/testcases"
+            sh "${workspace}/master_check_or_construct.py -d ${testcases_root}"
+
+            def acis_master_dir = "${master_nfs_home}/acis_framework/acis_master"
+
+            log_and_report = "${userhome}/log_and_report/${env.PLATFORM}"
+            def loop_test = "${userhome}/loop_test/${env.PLATFORM}"
+
+            sh "${workspace}/master_check_or_construct.py -d ${log_and_report}/${env.ACIS_DIFF}"
+            sh "${workspace}/master_check_or_construct.py -d ${loop_test}/${env.ACIS_DIFF}"
+
+            sh "python3 ${workspace}/master_copytree.py -c without_init -s  ${testcases_root} -d ${log_and_report}/${env.ACIS_DIFF}/testcases"
+            sh "python3 ${workspace}/master_copytree.py -c with_init    -s  ${testcases_root} -d ${loop_test}/${env.ACIS_DIFF}/testcases"
+
+            sh "python3 ${workspace}/master_cpfile.py -s ${acis_master_dir}/pytest.ini -d ${loop_test}/${env.ACIS_DIFF}/pytest.ini"
+            sh "python3 ${workspace}/master_cpfile.py -s ${acis_master_dir}/conftest.py -d ${loop_test}/${env.ACIS_DIFF}/testcases/conftest.py"
+
+            def dispatcher = load "${workspace}/master_dispatcher.groovy"
+
+            def cookie = dispatcher.get_cookie()
+            testplan = cookie[0]
+            testplan_curser = cookie[1]
+
+            def builders = [:]
+            for(i = 0; i < testplan_curser.size(); i++){
+                def item = testplan[testplan_curser[i]]
+                builders[testplan_curser[i]] = {
+                    build(job: item["job"],
+                          parameters: item["parameters"],
+                          wait: true)
+                }
+            }
+            try{
+                if (builders){
+                    parallel(builders)
+                }else{
+                    println "NO builder should be run."
+                    throw new Exception("NO work to run, maybe that you want.")
+                }
+            }
+            catch(Exception e){
+                println "Parallel Exception, So must check ACIS slave to confirm problem."
+                throw e // If you don NOT want to throw it, comment it.
+            }
+            finally{
+                println "Although Exception, but hope to goto next step."
+            }
+        }
+
+        stage('master_report'){
+
+            println " > record args."
+            def src = "${log_and_report}/${env.ACIS_DIFF}/testcases"
+            def dst = "${log_and_report}/${env.ACIS_DIFF}/${env.ACIS_DIFF}_results"
+            def zip = "${log_and_report}/${env.ACIS_DIFF}/${env.ACIS_DIFF}_results.zip"
+            def master_workhome = "/home/rex/ACIS_JENKINS/workspace"
+            def link = "${master_workhome}/${env.JOB_NAME}/${env.ACIS_DIFF}_results"
+            def report = "${master_workhome}/${env.JOB_NAME}/${env.ACIS_DIFF}_report"
+            def reportlink = "${master_workhome}/${env.JOB_NAME}/${env.ACIS_DIFF}_report_link"
+            println " < end record."
+
+            sh "python3 ${workspace}/master_report.py -s ${src} -d ${dst} -z ${zip} -L ${link} -R ${report} -l ${reportlink}"
+            allure includeProperties: false, jdk: '', report: "${env.ACIS_DIFF}_report", results: [[path: "${env.ACIS_DIFF}_results"]]
+
+            def zip_src_dir = "${master_workhome}/${env.JOB_NAME}/${env.ACIS_DIFF}_report"
+            def zip_dst_file= "${log_and_report}/${env.ACIS_DIFF}/${env.ACIS_DIFF}_report.zip"
+            sh "python3 ${workspace}/master_zip_report.py -s ${zip_src_dir} -z ${zip_dst_file}"
+        }
+
+        stage('master_db'){
+            println "--- Jenkins Master Database stage. Hook"
+        }
+
+        stage('master_web'){
+            println "--- Jenkins Master Website stage. Hook"
+        }
+    }
+}
+
+/*------------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------*/
+/*---------------Functional Test on Master Node --------------------------------*/
+/*------------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------*/
+
+real_body('master')

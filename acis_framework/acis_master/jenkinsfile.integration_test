@@ -1,0 +1,138 @@
+#! /usr/bin/env groovy
+
+// ACIS Pipeline
+
+def real_body(platform){
+
+    node(platform){
+
+        def workspace = pwd()
+
+        println "${workspace}"
+        sh "ifconfig"
+
+        stage("master_envs_parser"){
+
+            println "workspace: ${workspace}"
+            sh 'hostname'
+
+            def m = load "${workspace}/master_envs_parser.groovy"
+            m.strip_and_export()
+            m.show()
+        }
+
+        stage('master_job_monitor'){
+            //sh "python3 ${workspace}/master_job_monitor.py"
+            println "--- Jenkins Master monitor stage. Hook"
+        }
+
+        stage('master_dispatcher'){
+            def testcases_root = "\$HOME/nfs_acis/Integration_Test/acis_testcases/testcases"
+            def acis_master_dir = "\$HOME/nfs_acis/acis_framework/acis_master"
+
+            def log_and_report = "\$HOME/nfs_acis/Integration_Test/log_and_report/${env.PLATFORM}"
+            def loop_test = "\$HOME/nfs_acis/Integration_Test/loop_test/${env.PLATFORM}"
+
+            sh "python3 ${workspace}/master_copytree.py -c without_init -s  ${testcases_root} -d ${log_and_report}/${env.ACIS_DIFF}/testcases"
+            sh "python3 ${workspace}/master_copytree.py -c with_init    -s  ${testcases_root} -d ${loop_test}/${env.ACIS_DIFF}/testcases"
+
+            sh "python3 ${workspace}/master_cpfile.py -s ${acis_master_dir}/pytest.ini -d ${loop_test}/${env.ACIS_DIFF}/pytest.ini"
+            sh "python3 ${workspace}/master_cpfile.py -s ${acis_master_dir}/conftest.py -d ${loop_test}/${env.ACIS_DIFF}/testcases/conftest.py"
+
+            def dispatcher = load "${workspace}/master_dispatcher.groovy"
+
+            def cookie = dispatcher.get_cookie()
+            testplan = cookie[0]
+            testplan_curser = cookie[1]
+
+            println testplan[testplan_curser[0]]["job"]
+            println testplan[testplan_curser[0]]["parameters"]
+
+            def builders = [:]
+            for(i = 0; i < testplan_curser.size(); i++){
+                def item = testplan[testplan_curser[i]]
+                builders[testplan_curser[i]] = {
+                    build(job: item["job"],
+                          parameters: item["parameters"],
+                          wait: true)
+                }
+            }
+            try{
+                parallel(builders)
+            }
+            catch(Exception e){
+                println "Parallel Exception, So must check ACIS slave to confirm problem."
+                throw e // If you don NOT want to throw it, comment it.
+            }
+            finally{
+                println "Although Exception, but hope to goto next step."
+            }
+        }
+
+        stage('master_report'){
+
+            println " > record args."
+            println "\$HOME/nfs_acis/Integration_Test/log_and_report/${PLATFORM}/${ACIS_DIFF}/testcases"
+            def src = "\$HOME/nfs_acis/Integration_Test/log_and_report/${PLATFORM}/${ACIS_DIFF}/testcases"
+            println "\$HOME/nfs_acis/Integration_Test/log_and_report/${PLATFORM}/${ACIS_DIFF}/${ACIS_DIFF}_results"
+            def dst = "\$HOME/nfs_acis/Integration_Test/log_and_report/${PLATFORM}/${ACIS_DIFF}/${ACIS_DIFF}_results"
+            println "\$HOME/nfs_acis/Integration_Test/log_and_report/${PLATFORM}/${ACIS_DIFF}/${ACIS_DIFF}_results.zip"
+            def zip = "\$HOME/nfs_acis/Integration_Test/log_and_report/${PLATFORM}/${ACIS_DIFF}/${ACIS_DIFF}_results.zip"
+            println "\$HOME/platform_${PLATFORM}/workspace/${env.JOB_NAME}/${ACIS_DIFF}_results"
+            def link = "\$HOME/platform_${PLATFORM}/workspace/${env.JOB_NAME}/${ACIS_DIFF}_results"
+            println "\$HOME/platform_${PLATFORM}/workspace/${env.JOB_NAME}/${ACIS_DIFF}_report"
+            def report = "\$HOME/platform_${PLATFORM}/workspace/${env.JOB_NAME}/${ACIS_DIFF}_report"
+            //println "\$HOME/nfs_acis/Integration_Test/log_and_report/${PLATFORM}/${ACIS_DIFF}/${ACIS_DIFF}_report"
+            //def report = "\$HOME/nfs_acis/Integration_Test/log_and_report/${PLATFORM}/${ACIS_DIFF}/${ACIS_DIFF}_report"
+            println "\$HOME/platform_${PLATFORM}/workspace/${env.JOB_NAME}/${ACIS_DIFF}_report"
+            def reportlink = "\$HOME/platform_${PLATFORM}/workspace/${env.JOB_NAME}/${ACIS_DIFF}_report_link"
+            println " < end record."
+
+            sh "python3 ${workspace}/master_report.py -s ${src} -d ${dst} -z ${zip} -L ${link} -R ${report} -l ${reportlink}"
+            allure includeProperties: false, jdk: '', report: "${ACIS_DIFF}_report", results: [[path: "${ACIS_DIFF}_results"]]
+
+            junit keepLongStdio: true, testResults: "log_and_report/${PLATFORM}/${ACIS_DIFF}/junit_report/*.xml"
+
+            def zip_src_dir = "\$HOME/platform_${PLATFORM}/workspace/${env.JOB_NAME}/${ACIS_DIFF}_report"
+            def zip_dst_file= "\$HOME/nfs_acis/Integration_Test/log_and_report/${PLATFORM}/${ACIS_DIFF}/${ACIS_DIFF}_report.zip"
+            sh "python3 ${workspace}/master_zip_report.py -s ${zip_src_dir} -z ${zip_dst_file}"
+        }
+
+        stage('master_db'){
+            println "--- Jenkins Master Database stage. Hook"
+        }
+
+        stage('master_web'){
+            println "--- Jenkins Master Website stage. Hook"
+        }
+    }
+}
+
+def make_platform_workspace(platform){
+    node(platform){
+        def workspace = pwd()
+        stage('make workspace'){
+            sh "hostname"
+            sh "echo \$HOME"
+            println "${workspace}"
+        }
+    }
+}
+
+/*------------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------*/
+/*---------------Different Platform, Different RaspberryPi Node-----------------*/
+/*------------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------*/
+
+if (env.PLATFORM == "9X28") {
+    real_body("rasp-bsp-9x28")
+    //make_platform_workspace("rasp-bsp-9x28")
+}
+else if (env.PLATFORM == "9X40") {
+    real_body("rasp-bsp-9x40")
+    //make_platform_workspace("rasp-bsp-9x40")
+}
+else{
+    println "Now, we can't support platform [${env.PLATFORM}]"
+}

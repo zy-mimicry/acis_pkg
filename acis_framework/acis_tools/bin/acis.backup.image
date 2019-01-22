@@ -1,0 +1,72 @@
+#! /bin/bash
+# coding=utf-8
+
+# 4G maybe no enough, so if no space error occur, please modify here.
+sudo dd if=/dev/zero of=raspberrypi.img bs=1MB count=4096
+sudo parted raspberrypi.img --script -- mklabel msdos
+sudo parted raspberrypi.img --script -- mkpart primary fat32 8192s 122879s
+sudo parted raspberrypi.img --script -- mkpart primary ext4 122880s -1
+
+loopdevice=`sudo losetup -f --show raspberrypi.img`
+sleep 2
+device=`sudo kpartx -va $loopdevice | sed -E 's/.*(loop[0-9])p.*/\1/g' | head -1`
+sleep 2
+device="/dev/mapper/${device}"
+
+sleep 2
+partBoot="${device}p1"
+partRoot="${device}p2"
+
+#Got Partitions ID
+boot_p_id=`sudo blkid | grep $partBoot | sed -n 's/.*"\(.*\)".*/\1/p'`
+root_p_id=`sudo blkid | grep $partRoot | sed -n 's/.*"\(.*\)".*/\1/p'`
+
+echo "new root partition id: $root_p_id"
+echo "new boot partition id: $boot_p_id"
+
+sleep 1
+
+sudo mkfs.vfat $partBoot
+sudo mkfs.ext4 $partRoot
+sleep 2
+sudo mount -t vfat $partBoot /media
+sleep 2
+sudo cp -rfp /boot/* /media/
+
+cd /media
+
+# modify cmdline
+pick_old_p_id_root=`sudo sed 's/.*PARTUUID=\(.*\) rootfs.*/\1/g' cmdline.txt`
+pick_old_p_id_boot=`echo $pick_old_p_id_root | sed "s/-02/-01/g"`
+sudo sed -i "s/$pick_old_p_id_root/$root_p_id/g" cmdline.txt
+
+echo "old root partition id: $pick_old_p_id_root"
+echo "old boot partition id: $pick_old_p_id_boot"
+cat cmdline.txt
+
+cd -
+sleep 2
+
+sudo umount /media
+sudo mount -t ext4 $partRoot /media/
+sleep 4
+cd /media
+# sudo dump -0uaf - / | restore -rf -
+#sudo dump -0 -u -f - /dev/mmcblk0p2 | sudo restore -r -f -
+sudo dump -0 -u -f /home/jenkins/nfs_acis/Rasp-Img/m.dump /dev/mmcblk0p2
+sudo restore -r -v -f /home/jenkins/nfs_acis/Rasp-Img/m.dump
+#sudo dump -0uaf /home/jenkins/nfs_acis/Rasp-Img/m.img.bak /
+#restore -rf /home/jenkins/nfs_acis/Rasp-Img/m.img.bak /media
+
+sleep 4
+
+# modify fstab
+sudo sed -i "s/$pick_old_p_id_boot/$boot_p_id/g" /media/etc/fstab
+sudo sed -i "s/$pick_old_p_id_root/$root_p_id/g" /media/etc/fstab
+sleep 2
+cat /media/etc/fstab
+
+cd
+sudo umount /media
+sudo kpartx -d $loopdevice
+sudo losetup -d $loopdevice

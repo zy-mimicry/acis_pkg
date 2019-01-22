@@ -102,3 +102,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# rex
+acis_framework/acis_base/docs/doxygen_doc/html/

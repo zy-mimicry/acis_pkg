@@ -1,0 +1,27 @@
+# ACIS udev conf
+
+# Now, support 'TWO' DUT : master and slave 
+ATTRS{serial}=="fdf5a6b3", GOTO="acis_master"
+ATTRS{serial}=="9d95b04f", GOTO="acis_slave"
+GOTO="acis_end"
+
+# Jenkins Slave -- {acis master DUT}
+LABEL=="acis_master"
+SUBSYSTEMS=="usb", DRIVERS=="GobiSerial", SYMLINK+="acis/master/AT", ATTRS{bInterfaceNumber}=="03"
+SUBSYSTEMS=="usb", DRIVERS=="GobiSerial", SYMLINK+="acis/master/DM", ATTRS{bInterfaceNumber}=="00"
+SUBSYSTEMS=="usb", DRIVERS=="GobiSerial", SYMLINK+="acis/master/NMEA", ATTRS{bInterfaceNumber}=="02"
+SUBSYSTEMS=="usb", DRIVERS=="GobiSerial", SYMLINK+="acis/master/RAW_DATA", ATTRS{bInterfaceNumber}=="05"
+SUBSYSTEMS=="usb", DRIVERS=="GobiSerial", SYMLINK+="acis/master/OSA", ATTRS{bInterfaceNumber}=="06"
+GOTO="acis_end"
+
+# Jenkins Slave -- {acis slave DUT}
+LABEL=="acis_slave"
+SUBSYSTEMS=="usb", DRIVERS=="GobiSerial", SYMLINK+="acis/slave/AT", ATTRS{bInterfaceNumber}=="03"
+SUBSYSTEMS=="usb", DRIVERS=="GobiSerial", SYMLINK+="acis/slave/DM", ATTRS{bInterfaceNumber}=="00"
+SUBSYSTEMS=="usb", DRIVERS=="GobiSerial", SYMLINK+="acis/slave/NMEA", ATTRS{bInterfaceNumber}=="02"
+SUBSYSTEMS=="usb", DRIVERS=="GobiSerial", SYMLINK+="acis/slave/RAW_DATA", ATTRS{bInterfaceNumber}=="05"
+SUBSYSTEMS=="usb", DRIVERS=="GobiSerial", SYMLINK+="acis/slave/OSA", ATTRS{bInterfaceNumber}=="06"
+GOTO="acis_end"
+
+# End of Conf.
+LABEL="acis_end"

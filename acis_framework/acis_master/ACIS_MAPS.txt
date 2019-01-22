@@ -1,0 +1,6 @@
+casename: ACIS_A_D_AUDIO_ACDB_TEST.py   ! labels: driver      ! types: Driver,Audio        ! times: 1;
+casename: ACIS_A_D_MISC_ADC_TEST.py     ! labels: driver      ! types: Driver,Misc         ! times: 1;
+casename: ACIS_A_R_DataR_EFS_CORRUPTION_NV_RESTORE.py ! labels: reliability ! types: DataR ! times: 1;
+casename: ACIS_A_S_Reset_Linux_Warm.py  ! labels: system      ! types: System,Reset        ! times: 1;
+casename: AAA ! labels: qmi,jj ! types: driver,ppy ! times: 2;
+casename: BBB ! labels: spi,mm ! types: system,mmd ! times: 2;
