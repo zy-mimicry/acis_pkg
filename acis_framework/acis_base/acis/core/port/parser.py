@@ -18,8 +18,22 @@ from random import choice
 
 
 class PortConfParser():
+    """
+    A PortConfParser class, it's provide method to parse the port config.
+
+    """
 
     def __init__(self):
+        """
+        PortConfParser constructor function, init necessary conditions
+
+        Args:
+            none
+
+        Returns:
+            none
+
+        """
 
         self.configs = {}
 
@@ -33,7 +47,14 @@ class PortConfParser():
 
     def __narrow_config(self):
         """
-        Drop self.configs items that without in devices.
+        the method purpose to drop self.configs items that without in devices.
+
+        Args:
+            none
+
+        Returns:
+            none
+
         """
         try:
             output = subprocess.check_output('adb devices',
@@ -58,9 +79,10 @@ class PortConfParser():
 
     def _pick_info(self,_file):
         """
-        Pick some information from '_file'
+        The method to Pick some information from udev file
+
         'self.configs' content:
-        eg.
+        eg.\n
         {
         "DUT1" : { "serial" : xxx,
                      "link"   : xxx, << acis/DUT1
@@ -73,8 +95,15 @@ class PortConfParser():
                      "DM"     : xxx},<< acis/DUT2/DM
         }
 
-        """
+        Examples:
+        _pick_info('/etc/udev/rules.d/11-acis.rules')
 
+        Args:
+            _file: the udev file you want to pick information
+
+        Returns:
+            none.
+        """
         if not os.path.exists(_file): raise AcisRuleFileNotExist()
 
         with open(_file, mode = 'r') as f:
@@ -105,16 +134,23 @@ class PortConfParser():
 
     def get_conf(self, backend_name, type_name):
         """
-        Note: Register 'AT' first, then register 'ADB',
-        BTW:  MUST register AT port every testcase, if not, ADB can NOT work.
+        The method to get the port object config.
 
-        return   'type_name' : >> 'DUT1' or 'DUT2' or 'any'
-                 'mapto'     : >> only 'any' has this prop.
-                 'backend'   : >> 'AT' or 'ADB'
-                 'dev_link'  : >> eg: AT > /dev/acis/DUT1/AT
-                 'serial_id' : >> adb serial id.
+        Examples:
+        get_conf("AT", "DUT1")
+
+        Args:
+            backend_name: The port name(AT/adb).
+            type_name: The DUT name(DUT1/DUT2/any)
+
+        Returns:
+            return the port object config.
+            Examples:   'type_name' : >> 'DUT1' or 'DUT2' or 'any' \n
+                        'mapto'     : >> only 'any' has this prop. \n
+                        'backend'   : >> 'AT' or 'ADB' \n
+                        'dev_link'  : >> eg: AT > /dev/acis/DUT1/AT \n
+                        'serial_id' : >> adb serial id.
         """
-
         if type_name == "DUT1":
 
             if "DUT1" not in self.configs:

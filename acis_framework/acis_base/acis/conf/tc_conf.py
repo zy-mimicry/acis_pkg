@@ -35,6 +35,21 @@ strings = strings.format(INI_PATH = os.path.dirname(os.environ['TESTCASE_CFG']))
 exec(compile(strings, 'tc_conf', 'exec'))
 
 def get_ini_value ( file_path, sections, name ):
+    """
+    It be used to parse the fields in the INI file.
+
+    Examples:
+        get_ini_value( sim_ini + '/ATT_9331.ini', 'Identification', 'VoiceNumber')
+
+    Args:
+        file_path: the file path.
+        sections: the file sections
+        name: the name you want to get the config
+
+    Returns:
+        return the string value.
+
+    """
     if os.path.isfile(file_path):
         peer("\nRead %s:%s from %s\n" % ( sections, name, file_path ))
         Parser = configparser.RawConfigParser()

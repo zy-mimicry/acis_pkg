@@ -14,11 +14,22 @@ hook_log = None
 
 class ACISMiscer():
     """
+    ACISMiscer class
+
+    It's provide the method and attribute to operate the misc. It's a bridge between testcases and devices.
+    when we write the testcases, we can init a miscer,and use the method and attribute of the misc to complete the testcase.
     """
 
     def __init__(self):
+        """
+        the ACISMiscer class constructor function, init necessary conditions
 
+        Args:
+            none
 
+        Returns:
+            none
+        """
         self.limit_name = 'testcases' # Maybe get this var from environment better.
 
         try:
@@ -37,7 +48,19 @@ class ACISMiscer():
         self.envs = {}
 
     def deal_log_path(self, case_file):
+        """
+        Deal and provide the log path, the testcase log will saved in the path.
 
+        Examples:
+            deal_log_path('/home/jenkins/tmp/loop_test/testcases/Driver/LowSpeedBus/ACIS_A_D_LSBUS_SPI_TEST.py')
+
+        Args:
+            case_file: the case path, it will be made for the log.
+
+        Returns:
+            the log path("/tmp/acis/testlog/testcases/Driver/LowSpeedBus/*").
+
+        """
         dname,fname = os.path.split(case_file)
         dname = dname.split(self.limit_name + '/')[1]
         mprefix = self.prefix + '/' + self.limit_name + '/' + dname + '/'
@@ -71,7 +94,21 @@ class ACISMiscer():
 
 
     def deal_misc(self, log_file, logger_name, port_names, mail_to = "SWI@sierrawireless.com"):
+        """
+        Deal with the misc information from the testcases, init the misc for use by testcase
 
+        Args:
+            log_file: the path will be made for the log
+            logger_name: the logger object
+            port_names: the port names you want to register
+
+        Kwargs:
+            mail_to: the mail address
+
+        Returns:
+            the misc instance.
+
+        """
         global hook_log
         hook_log = self.log = Log(self.deal_log_path(log_file), logger_name = logger_name)
         self.mMail = self.register_mail(mail_to)
@@ -83,12 +120,33 @@ class ACISMiscer():
 
 
     def register_mail(self, mail_to):
+        """
+        Register mail(It's not used now)
+
+        Examples:
+            register_mail("SWI@sierrawireless.com")
+
+        Args:
+            mail_to: mail address
+
+        Returns:
+            none.
+        """
         peer("[Mail] From: {}".format(mail_to))
 
     def order_port_list(self,port_names):
         """
-        Note: the order of ports register is important!
-        At port should be in front.
+        Order the port list, make the AT port in front of the ADB
+
+        Examples:
+            order_port_list('AT..DUT1')
+
+        Args:
+            port_names: the port name .
+
+        Returns:
+            ordered port list.
+
         """
         AT_front = []
         other_behind = []
@@ -102,6 +160,19 @@ class ACISMiscer():
         return AT_front
 
     def register_port(self, port_names):
+        """
+        Register the port.
+
+        Examples:
+            register_port('AT..DUT1')
+
+        Args:
+            port_names: the port name you want to register.
+
+        Returns:
+            none.
+
+        """
 
         self.mPort = Port()
         port_names = self.order_port_list(port_names)
@@ -116,98 +187,3 @@ class ACISMiscer():
                 self.adb = backend
             else:
                 pass
-
-# import os,re
-# from pprint import pprint as pp
-
-
-# def get_log_files(path):
-
-#     if not os.path.isdir(path):
-#         raise TypeError
-
-#     log_files = []
-#     for root, dirs, files in os.walk(path):
-#         [log_files.append(os.path.join(root, f)) for f in files if f.startswith('ACIS') and f.endswith('.log')]
-#     return log_files
-
-# def get_element(files):
-#     """
-#     Element:
-#     - TESTCASE - Result - Test_Date - Test_Times - Test_Log - Test_IR_Report
-
-#     - Platform - FW_version - PASS_TIMES - FAIL_TIMES
-#     """
-#     record = {}
-
-#     re_g = {
-#         'testcase'       : 1,
-#         'result'         : 2,
-#         'test_date'      : 3,
-#         'test_times'     : 4,
-#         'test_log'       : 5,
-#         'test_ir_report' : 6,
-
-#         'product'        : 1,
-#         'fw_version'     : 2,
-#     }
-
-#     platform_maps = {
-#         '9X28' : ('AR7588',),
-#         '9X40' : ('AR7598',),
-#     }
-
-#     re_SWI_ACIS = re.compile(r'TESTCASE:\[(.*?)\]\sResult:\[(.*?)\]\sTest_Date:\[(.*?)\]\sTest_Times:\[(.*?)\]\sTest_Log:\[(.*?)\]\sTest_IR_Report:\[(.*?)\]')
-#     re_AT_ATI = re.compile(r'\[Model: (.*)<CR><LF>Revision: (.*?)\s')
-
-#     for f in files:
-#         record[f] = {}
-#         last_one_touch = False
-#         once_flag      = False
-
-#         pass_times = 0
-#         fail_times = 0
-
-#         for line in reversed(list(open(f))):
-#             if line.startswith('<SWI:ACIS>'):
-
-#                 gs = re_SWI_ACIS.search(line)
-
-#                 if gs and gs.group(re_g['result']) == 'PASS':
-#                     pass_times += 1
-#                 elif gs and gs.group(re_g['result']) == 'FAIL':
-#                     fail_times += 1
-
-#                 if gs and not last_one_touch:
-#                     print("hook?")
-#                     record[f]['TESTCASE'] = gs.group(re_g['testcase'])
-#                     record[f]['Result']   = gs.group(re_g['result'])
-#                     record[f]['Test_Date']  = gs.group(re_g['test_date'])
-#                     record[f]['Test_Times'] = gs.group(re_g['test_times'])
-#                     record[f]['Test_Log']   = gs.group(re_g['test_log'])
-#                     record[f]['IR_Report_Path'] = gs.group(re_g['test_ir_report'])
-#                     last_one_touch = True
-
-#             rs = re_AT_ATI.search(line)
-
-#             if rs and not once_flag:
-#                 for platform, products in platform_maps.items():
-#                     if rs.group(re_g['product']) in products:
-#                         record[f]['Platform'] = platform
-
-#                 record[f]['FW_version'] = rs.group(re_g['fw_version'])
-
-#                 once_flag = True
-
-#         record[f]['PASS_TIMES'] = pass_times
-#         record[f]['FAIL_TIMES'] = fail_times
-
-#     return record
-
-
-# if __name__ == "__main__":
-
-#     obj_dir = './2019_01_19_11_47_30'
-#     files = get_log_files(obj_dir)
-#     record = get_element(files)
-#     pp(record)

@@ -12,23 +12,62 @@ from datetime import datetime
 from .at import _AT
 
 class _ADB():
+    """
+    It's an ADB port object class and provide the method to operate the port. you can init an ADB port object instance(DUT1/DUT2/any).
+
+    """
 
     name = '_ADB'
 
     def __init__(self, serial_id):
+        """
+        _ADB constructor function, init adb port,get serial_id
 
+        Args:
+            serial_id: the DUT serial_id.
+
+        Returns:
+            none
+
+        """
         self.serial_id = serial_id
 
         peer(self)
 
     def __killSubProcess(self, proc):
+        """
+        Kill subProcess.
+
+        Args:
+            proc: the proc you want to kill.
+
+        Returns:
+            none.
+
+        """
         proc.terminate()
 
     def __repr__(self):
        return "<Class: {name} , serial id: {conf}>".format(name = _ADB.name,conf=self.serial_id)
 
     def send_cmd(self, command, timeout=30):
+        """
+        Send ADB commands with adb -s serial_id command.
 
+        Examples:
+        send_cmd('shell "echo %s >/dev/ttyHS0" ' % string)
+        send_cmd('shell "cat /dev/ttyHS0>/tmp/at.txt" ', timeout = 60)
+
+        Args:
+            command: the adb command you want to send.
+
+        Kwargs:
+            timeout: adb command timeout
+
+        Returns:
+            return the command output.
+
+        """
         try:
             start_time = datetime.now()
             dt = datetime.now()
@@ -80,10 +119,25 @@ class _ADB():
             return "\r\nERROR\r\n"
 
 class ADB():
+    """
+    It's an ADB port class, it's will from _ADB class to init the ADB port object instance.
+
+    """
 
     name = 'ADB'
 
     def __init__(self, obj, conf):
+        """
+        ADB constructor function, init the _ADB class to get an ADB port object instance
+
+        Args:
+            obj: the ADB port object instance name
+            conf: The ADB port config
+
+        Returns:
+            none
+
+        """
 
         self.conf = {}
 
@@ -100,7 +154,16 @@ class ADB():
         self.info()
 
     def reinit(self, obj, conf):
+        """
+        The method will reinit the port.
 
+        Args:
+            obj: the object you want to init.
+            conf: the object config.
+
+        Returns:
+            return the initialized  object
+        """
         if obj == "DUT1":
             self.conf["DUT1"] = conf
             self.DUT1 = _ADB(conf['serial_id'])

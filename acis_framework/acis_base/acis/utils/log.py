@@ -74,25 +74,72 @@ DEFAULT_LOGGING = {
 
 
 class Peer:
-    """"""
+    """
+    It's a peer class, It's will provide the method to print log(admin use)
+
+    """
     def __init__(self, logger_name):
+        """
+        The peer class constructor function
+
+        Configure logging basic settings,and set the log level,etc.
+
+        Args:
+            logger_name: the logger object
+
+        Returns:
+            none.
+
+        """
         logging.config.dictConfig(DEFAULT_LOGGING)
         self.logger = logging.getLogger(logger_name)
 
     def __call__(self,*kargs, **kwargs):
+        """
+        The __call__ method can make the class callable, the hook_log is hook on the Log
+
+        Example:
+            peer("Hello world %s" % str)
+
+        Args:
+            *kargs: log information want to print
+            **kwargs: log information want to print
+
+        Returns:
+            the log information.
+        """
         self.logger.error(*kargs, **kwargs)
         from acis import hook_log
         if hook_log: hook_log(*kargs, **kwargs)
 
 class Log:
-    """"""
+    """
+    It's a log class, it's will provide the method to print log
+
+    """
     def __init__(self,
                  log_path,
                  logger_name = 'acis.testcase.debug',
                  log_level = logging.DEBUG,
                  log_format = "%(asctime)s |  %(message)s"):
                  #log_format = "%(asctime)s - %(filename)s[line:%(lineno)d] : %(message)s"):
+        """
+        The Log class constructor function
 
+        Configure logging basic settings,and set the log level,the log channel(ch1 is stream,ch2 is file),log formatter,etc.
+
+        Args:
+            log_path: the log path
+
+        Kwargs:
+            logger_name: the logger object
+            log_level: the log print level
+            log_format: the log format
+
+        Returns:
+            none.
+
+        """
         print("<logger name :{}>".format(logger_name))
         if not os.path.exists(os.path.dirname(log_path)):
             os.makedirs(os.path.dirname(log_path), mode=0o775)
@@ -108,6 +155,20 @@ class Log:
         self.logger.addHandler(ch2)
 
     def __call__(self, *kargs, **kwargs):
+        """
+        The __call__ method can make the class callable
+
+        Example:
+            Log("Hello world %s" % str)
+
+        Args:
+            *kargs: log information want to print
+            **kwargs: log information want to print
+
+        Returns:
+            the log information.
+
+        """
         return self.logger.error(*kargs, **kwargs)
 
 peer = Peer("admin")

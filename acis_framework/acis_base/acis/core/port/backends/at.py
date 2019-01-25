@@ -23,13 +23,26 @@ import allure,pytest
 
 
 class _AT():
+    """
+    It's an _AT port object class and provide the method to operate the port. you can init an AT port object instance(DUT1/DUT2/any).
+
+    """
 
     name = '_AT'
 
     objs = {}
 
     def __init__(self, conf):
+        """
+        _AT constructor function, init and open serial port
 
+        Args:
+            conf : The com serial config
+
+        Returns:
+            none
+
+        """
         self.conf = conf
         self.port_link = conf["dev_link"]
 
@@ -69,6 +82,29 @@ class _AT():
              xonxoff=False,
              interCharTimeout=None,
              write_timeout=None):
+        """
+        Open AT port, maybe you shouldn't use it, because the initialization of the port is already ready before running the case.
+
+        Examples:
+            open("/dev/acis/DUT1/AT")
+
+        Kwargs:
+            port : the AT serial port
+            baudrate : the baudrate of the port
+            bytesize : the bytesize of the port
+            parity : the parity of the port
+            stopbits : the stopbits of the port
+            rtscts :  I/o for request/clear to send signal
+            OpenPortTimeout: detect port timeout
+            timeout:  Read timeout
+            dsrdtr: I/O for Data ready signal
+            xonxoff: software flow control
+            interCharTimeout: Character interval timeout
+            write_timeout: write timeout
+
+        Returns:
+            return serial port instance.
+        """
 
         # validate parameter - rtscts
         flowcontrol = "Hardware"
@@ -124,6 +160,18 @@ class _AT():
 
     @allure.step
     def reopen(self, cfun_delay_time=2000):
+        """
+        Reopen serial port, it's will close and reopen the ports.
+
+        Examples:
+            reopen()
+
+        Kwargs:
+            cfun_delay_time : the delay time to exec the function
+
+        Returns:
+            return the callback open.
+        """
 
         self.close()
         self.sleep(cfun_delay_time)
@@ -136,6 +184,24 @@ class _AT():
 
     @allure.step
     def detect_port(self, port, timeout=2000, logmsg="logmsg"):
+        """
+        Detect the serial port
+
+        Examples:
+            detect_port("/dev/acis/DUT1/AT")
+
+        Args:
+            port : the serial port you want to detect.
+
+        Kwargs:
+            timeout : detect port timeout
+            logmsg:     logmsg, peer with log message.\n
+                        debug, peer with log and debug message.\n
+                        nologmsg, peer without any message. \n
+
+        Returns:
+            none.
+        """
 
         start_time = datetime.now()
         flag_linebreak = 0
@@ -179,6 +245,22 @@ class _AT():
 
     @allure.step
     def sleep(self, millisecond, silent=False):
+        """
+        Call the time module and execute sleep function.
+
+        Examples:
+            sleep(1000)
+
+        Args:
+            millisecond : sleep time(ms).
+
+        Kwargs:
+            silent: It's a bool flag to control whether to print sleep time log or not
+
+        Returns:
+            none
+
+        """
         try:
             if not(silent):
                 peer("SLEEP: Start sleep for %d milliseconds" % millisecond)
@@ -192,6 +274,18 @@ class _AT():
 
     @allure.step
     def close(self):
+        """
+        The method will close and release the occupation of the port.
+
+        Examples:
+            close()
+
+        Args:
+            none
+
+        Returns:
+            none
+        """
         try:
             self.hCom.close()
 
@@ -201,20 +295,41 @@ class _AT():
             peer("CLOSE: Error for "+self.hCom.port)
 
     def timeDisplay(self, dt = None):
-        "Display the time ; if dt is empty retrun actual date time under format, otherless return dt under format"
-        "INPUT  : (optionnal) dt : date Time"
-        "OUTPUT : date Time under format hh:mm:ss:???"
+        """
+        Display the time, if dt is empty retrun actual date time under format, otherless return dt under format
+
+        Examples:
+            timeDisplay()
+
+        Kwargs:
+            dt : date time.
+
+        Returns:
+            date Time under format hh:mm:ss:???.
+
+        """
         if dt == None:
             dt = datetime.now()
         return "(%0.2d:%0.2d:%0.2d:%0.3d)"%(dt.hour, dt.minute, dt.second, dt.microsecond/1000)
 
     @allure.step
     def send_cmd(self, cmd, printmode="symbol"):
-        "goal of the method : this method sends an AT command on a COM port"
-        "INPUT : hCom : COM port object"
-        "        cmd : AT command to send"
-        "OUTPUT : none"
+        """
+        Sends an AT command to a serial port.
 
+        Examples:
+            send_cmd("ATE0\r")
+
+        Args:
+            cmd: the AT command you want to send.
+
+        Kwargs:
+            printmode: the log print mode(symbol, hexstring, raw)
+
+        Returns:
+            none.
+
+        """
         if not self.hCom.is_open:
             self.hCom.open()
 
@@ -233,6 +348,22 @@ class _AT():
         peer(LogMsg)
 
     def ascii2print(self, inputstring, mode="symbol"):
+        """
+        ASCII convert
+
+        Examples:
+            ascii2print("ATE0\r", mode="symbol")
+
+        Args:
+            inputstring: the inputstring need to be coverted.
+
+        Kwargs:
+            mode: convert mode(symbol, hexstring, raw)
+
+        Returns:
+            the convert outputstring.
+
+        """
 
         if mode=="symbol":
             # direct convert value to string by Dictionary >> very fast
@@ -274,28 +405,55 @@ class _AT():
 
     @allure.step
     def clean_buffer(self):
-            "goal of the method : this method clears the input buffer of hCom COM port instance"
-            "INPUT : hCom, COM port instance"
-            "OUTPUT : none"
-            try:
-                    self.hCom.flushInput()
+        """
+        The method clears the input buffer of serial port instance
 
-            except SystemExit:
-                    raise SystemExit
+        Examples:
+            clean_buffer()
 
-            except Exception as e:
-                    self.hCom.close()
-                    peer("CLEAR_BUFFER: Error!")
-                    peer(e)
+        Args:
+            none
+
+        Returns:
+            none.
+
+        """
+        try:
+            self.hCom.flushInput()
+
+        except SystemExit:
+            raise SystemExit
+
+        except Exception as e:
+            self.hCom.close()
+            peer("CLEAR_BUFFER: Error!")
+            peer(e)
 
     @allure.step
     def waitn_match_resp(self, waitpattern, timeout, condition="wildcard", update_result="critical", log_msg="logmsg", printmode="symbol"):
-        "goal of the method : combine AcisWaitResp() and AcisMatchResp()"
-        "INPUT : hCom : COM port object"
-        "        waitpattern : the matching pattern for the received data"
-        "        timeout : timeout value in second"
-        "OUTPUT : None"
+        """
+        Parses the contents of the serial buffer and provide some specified filtering conditions.
 
+        Examples:
+            waitn_match_resp(["*\r\nOK\r\n"], 4000)
+
+        Args:
+            waitpattern: the matching pattern for the received data
+            timeout: timeout value in second
+
+        Kwargs:
+            update_result:  critical, update result to global variable statOfItem \n
+                            not_critical, do nothing for the result \n
+            condition:      matching condition
+            log_msg:    logmsg, peer with log message.\n
+                        debug, peer with log and debug message.\n
+                        nologmsg, peer without any message. \n
+            printmode: the log print mode(symbol, hexstring, raw)
+
+        Returns:
+            match result.
+
+        """
         #myColor = colorLsit[8]
 
         # validate parameter - condition
@@ -317,23 +475,26 @@ class _AT():
 
     @allure.step
     def match_resp(self, resp, keywords, condition="wildcard", update_result="critical", log_msg="logmsg", printmode="symbol"):
-        "goal of the method : this method compares the received command to the expected command and Display the comparison result"
-        "INPUT :  resp : Response object or a string"
-        "         keywords (list) : expected response"
-        "         condition : matching condition, 1.wildcard"
-        "                                        2.match_all_order"
-        "                                        3.match_all_disorder"
-        "                                        4.contain_all_order"
-        "                                        5.contain_all_disorder"
-        "                                        6.contain_anyone"
-        "                                        7.not_contain_anyone"
-        "         update_result : 1. critical, update result to global variable statOfItem"
-        "                         2. not_critical, do nothing for the result"
-        "         log_msg : 1. logmsg, peer with log message"
-        "                   2. debug, peer with log and debug message"
-        "                   3. nologmsg, peer without any message"
-        "OUTPUT : Boolean >> True:response matched, False:repsonse mis-matched"
+        """
+        The method compares the received command response to the expected command response and display the comparison result,maybe you should use waitn_match_resp instead of this.
 
+        Args:
+            resp : Response object or a string
+            keywords: expected response
+
+        Kwargs:
+            condition : matching condition
+            update_result:      critical, update result to global variable statOfItem  \n
+                                not_critical, do nothing for the result\n
+            log_msg:    logmsg, peer with log message\n
+                        debug, peer with log and debug message\n
+                        nologmsg, peer without any message\n
+            printmode: the log print mode(symbol, hexstring, raw)
+
+        Returns:
+            Boolean >> True:response matched, False:repsonse mis-matched"
+
+        """
         #myColor = colorLsit[8]
         if not self.hCom.is_open:
             self.hCom.open()
@@ -614,13 +775,24 @@ class _AT():
 
     @allure.step
     def wait_resp(self, waitpattern, timeout=60000, log_msg="logmsg", printmode="symbol"):
-        "goal of the method : this method waits for the data received from Com port"
-        "INPUT : self.hCom : COM port object"
-        "        waitpattern : the matching pattern for the received data"
-        "        timeout (ms) : timeout between each received packet"
-        "        log_msg : option for log message"
-        "OUTPUT : Received data (String)"
+        """
+        The method waits for the data received from serial port.
 
+        Examples:
+            wait_resp(["*\r\nOK\r\n"], 4000)
+
+        Args:
+            waitpattern : the matching pattern for the received data.
+
+        Kwargs:
+            timeout : timeout between each received packet
+            log_msg : option for log message
+            printmode: the log print mode(symbol, hexstring, raw)
+
+        Returns:
+            Received data (String).
+
+        """
         if not self.hCom.is_open:
             self.hCom.open()
         start_time = datetime.now()
@@ -787,10 +959,24 @@ class _AT():
         return receivedResp
 
 class AT():
+    """
+    It's an AT port class, it's will from _AT class to init the AT port object instance
 
+    """
     name = "AT"
 
     def __init__(self, obj, conf):
+        """
+        AT constructor function, init the _AT class to get an AT port object instance
+
+        Args:
+            obj: the AT port object instance name
+            conf: The AT com port config
+
+        Returns:
+            none
+
+        """
 
         self.conf = {}
 
@@ -809,6 +995,16 @@ class AT():
         self.info()
 
     def reinit(self, obj, conf):
+        """
+        The method will reinit an AT port object instance.
+
+        Args:
+            obj: the object you want to init.
+            conf: the object config.
+
+        Returns:
+            return the initialized object
+        """
 
         if obj == "DUT1":
             self.conf["DUT1"] = conf
@@ -820,6 +1016,15 @@ class AT():
 
     @allure.step
     def closeall(self):
+        """
+        The method will close and release all open port.
+
+        Args:
+            none
+
+        Returns:
+            none.
+        """
 
         if self.DUT1:
             self.DUT1.close()
