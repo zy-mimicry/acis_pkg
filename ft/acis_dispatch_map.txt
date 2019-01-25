@@ -1,0 +1,4 @@
+casename: ACIS_A_D_AUDIO_ACDB_TEST   ! labels: driver      ! types: Driver,Audio        ! times: 1;
+casename: ACIS_A_D_MISC_ADC_TEST     ! labels: driver      ! types: Driver,Misc         ! times: 1;
+casename: ACIS_A_R_DataR_EFS_CORRUPTION_NV_RESTORE ! labels: reliability ! types: DataR ! times: 1;
+casename: ACIS_A_S_Reset_Linux_Warm  ! labels: system      ! types: System,Reset        ! times: 1;

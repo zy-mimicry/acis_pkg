@@ -1,0 +1,62 @@
+============================
+README FOR ACIS OFFLINE TEST
+============================
+
+1> Directory Structure
+======================
+
+ft_utils
+-----------
+(The python package entry, 'ft_utils' is a package.)
+
+docs                  << ft_utils package documents, just like: doxygen-doc.
+__init__.py           << Python package entry and used by test cases.
+log.py                << The log module of package for recording test information.
+port                  << The port module of package, includes 'AT','ADB',...
+report.py             << The report modudle of package for extracting the decorated report.
+
+
+pytest_injection
+----------------
+pytest.ini            << Files used by pytest for pytest command line options.
+conftest.py           << Files used by pytest for fixtures.
+
+
+offline
+-------
+envs_setup.sh         << ACIS Offline Test environment setup script.
+offline_test.sh       << ACIS Offline Test entry.
+slimming.sh           << Clean unwanted files.
+
+
+README
+------
+Myself for usage.
+
+
+2> Offline Test Steps
+=====================
+
+Step 1.
+-------
+cd offline;
+bash ./envs_setup.sh
+
+(NOTE: Please pay attention to the hints.)
+Maybe you have to configure other environments first. Just like: python or pytest...
+
+Step 2.
+-------
+touch a new testcase in ft/ or modify the old test case in ft/.
+
+Follow the standard naming rules:
+https://confluence.sierrawireless.com/pages/viewpage.action?spaceKey=FWA&title=ACIS%3A+Test+Cases
+
+Step 3.
+-------
+bash ./offline_test.sh testcase_name (no end with .py)
+
+Step 4.
+-------
+bash ./slimming.sh (clean all unwanted files)
+
