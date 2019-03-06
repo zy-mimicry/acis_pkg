@@ -5,6 +5,7 @@ export ROOT_PATH=$(cd $WORKSPACE/../../; pwd)
 
 export PYTHONPATH=$ROOT_PATH
 export ACIS_DIFF=$(date "+%Y_%m_%d_%H_%M_%S")
+export DESCRIPTION="OFFLINE TEST"
 export PLATFORM=offline
 export REPORT_PATH=$WORKSPACE/logs
 #Just Debug one by one
@@ -17,6 +18,7 @@ echo "> PYTHONPATH:   $PYTHONPATH"
 echo "> ACIS_DIFF:    $ACIS_DIFF"
 echo "> PLATFORM:     $PLATFORM"
 echo "> REPORT_PATH:  $REPORT_PATH"
+echo "> DESCRIPTION:  $DESCRIPTION"
 echo "> TIMES:        $TIMES"
 echo ""
 

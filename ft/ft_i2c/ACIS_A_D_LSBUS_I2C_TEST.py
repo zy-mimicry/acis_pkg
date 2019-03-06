@@ -221,12 +221,12 @@ class ACIS_A_D_LSBUS_I2C_TEST(): # << should be modified to test case name. <Wri
                 for f in m.flags:
                     m.log("--- {} stack info ---\n{}\n\n".format(f, m.errors[f]))
 
-                m.log("\n<SWI:ACIS> TESTCASE:[{}] Result:[{}] Test_Date:[{}] Test_Times:[{}] Test_Log:[{}] Test_IR_Report:[{}]\n"
-                      "".format(m.test_ID, "FAIL", m.envs['Test_Date'],m.envs['Test_Times'],m.envs['Test_Log'], m.envs['Test_IR_Report']))
+                m.log("\n<SWI:ACIS> TESTCASE:[{}] Result:[{}] Test_Date:[{}] Description:[{}] Test_Times:[{}] Test_Log:[{}] Test_IR_Report:[{}]\n"
+                      "".format(m.test_ID, "FAIL", m.envs['Test_Date'],m.envs['Description'],m.envs['Test_Times'],m.envs['Test_Log'], m.envs['Test_IR_Report']))
                 report.attach_file(source = m.which_log, name = __name__ + '.log',
                                    attachment_type = report.attachment_type.TEXT)
             else:
-                m.log("\n<SWI:ACIS> TESTCASE:[{}] Result:[{}] Test_Date:[{}] Test_Times:[{}] Test_Log:[{}] Test_IR_Report:[{}]\n"
-                      "".format(m.test_ID, "PASS", m.envs['Test_Date'],m.envs['Test_Times'],m.envs['Test_Log'], m.envs['Test_IR_Report']))
+                m.log("\n<SWI:ACIS> TESTCASE:[{}] Result:[{}] Test_Date:[{}] Description:[{}] Test_Times:[{}] Test_Log:[{}] Test_IR_Report:[{}]\n"
+                      "".format(m.test_ID, "PASS", m.envs['Test_Date'],m.envs['Description'],m.envs['Test_Times'],m.envs['Test_Log'], m.envs['Test_IR_Report']))
                 report.attach_file(source = m.which_log, name = __name__ + '.log',
                                    attachment_type = report.attachment_type.TEXT)

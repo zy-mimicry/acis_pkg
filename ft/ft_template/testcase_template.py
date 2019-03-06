@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from acis.core.report import report
+from ft_utils.report import report
 import os
 
 """
@@ -15,7 +15,10 @@ Date                    Fixer                           Modification
 ------------------------------------------------------------------------
 """
 
+# The directory where the test script is located.
 current_dir = os.path.dirname(os.path.abspath(__file__))
+# On raspberrypi, a directory of hardware-related configurations related to the DUT test environment.
+hw_cfgs_dir = "/etc/acis/" # end of '/'
 
 @report.fixture(scope="module")
 def m(request, minit):
@@ -75,9 +78,10 @@ class !AcisSystemReset!(): # << should be modified to test case name. <Written i
     #####################################################################
     @report.step("[Stage] <Pre-Condition>")
     def pre(self, m):
+
         self.class_local_method(m)
         m.log("Stage [pre]")
-        sim_ini = m.conf.SIM_INI
+
         m.at.any.send_cmd("ATE0\r\n")
         m.at.any.waitn_match_resp(["*\r\nOK\r\n"], 4000)
 
@@ -98,6 +102,10 @@ class !AcisSystemReset!(): # << should be modified to test case name. <Written i
 
         m.at.any.send_cmd("AT!UNLOCK=\"A710\"\r\n")
         m.at.any.waitn_match_resp(["*\r\nOK\r\n"], 4000)
+
+        m.at.any.send_cmd( 'AT+ICCID\r' )
+        m.at.any.waitn_match_resp(['*ICCID: *\r\n'], 4000, update_result = "not_critical")
+        m.at.any.waitn_match_resp(['\r\nOK\r\n'], 4000, update_result = "not_critical")
 
         m.at.any.send_cmd("AT!EROPTION=0,1\r\n")
         m.at.any.waitn_match_resp(["*\r\nOK\r\n"], 4000)
@@ -158,12 +166,12 @@ class !AcisSystemReset!(): # << should be modified to test case name. <Written i
                 for f in m.flags:
                     m.log("--- {} stack info ---\n{}\n\n".format(f, m.errors[f]))
 
-                m.log("\n<SWI:ACIS> TESTCASE:[{}] Result:[{}] Test_Date:[{}] Test_Times:[{}] Test_Log:[{}] Test_IR_Report:[{}]\n"
-                      "".format(m.test_ID, "FAIL", m.envs['Test_Date'],m.envs['Test_Times'],m.envs['Test_Log'], m.envs['Test_IR_Report']))
+                m.log("\n<SWI:ACIS> TESTCASE:[{}] Result:[{}] Test_Date:[{}] Description:[{}] Test_Times:[{}] Test_Log:[{}] Test_IR_Report:[{}]\n"
+                      "".format(m.test_ID, "FAIL", m.envs['Test_Date'],m.envs['Description'],m.envs['Test_Times'],m.envs['Test_Log'], m.envs['Test_IR_Report']))
                 report.attach_file(source = m.which_log, name = __name__ + '.log',
                                    attachment_type = report.attachment_type.TEXT)
             else:
-                m.log("\n<SWI:ACIS> TESTCASE:[{}] Result:[{}] Test_Date:[{}] Test_Times:[{}] Test_Log:[{}] Test_IR_Report:[{}]\n"
-                      "".format(m.test_ID, "PASS", m.envs['Test_Date'],m.envs['Test_Times'],m.envs['Test_Log'], m.envs['Test_IR_Report']))
+                m.log("\n<SWI:ACIS> TESTCASE:[{}] Result:[{}] Test_Date:[{}] Description:[{}] Test_Times:[{}] Test_Log:[{}] Test_IR_Report:[{}]\n"
+                      "".format(m.test_ID, "PASS", m.envs['Test_Date'],m.envs['Description'],m.envs['Test_Times'],m.envs['Test_Log'], m.envs['Test_IR_Report']))
                 report.attach_file(source = m.which_log, name = __name__ + '.log',
                                    attachment_type = report.attachment_type.TEXT)

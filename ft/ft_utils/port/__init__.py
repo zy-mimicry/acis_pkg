@@ -7,6 +7,8 @@
 from ft_utils.log import peer
 import os, re, subprocess
 from random import choice
+from pprint import pprint as pp
+import copy
 
 from . import at
 from . import adb
@@ -417,3 +419,57 @@ class Port:
         elif backend_name == "ADB":
             self.adb = self.factory.which_backend(backend_name, type_name, conf)
             return self.adb
+
+
+class PortProber:
+
+    def __init__(self):
+        self.parser  = PortConfParser()
+        self.factory = PortFactory()
+
+        self.samples = {}
+
+    def get_samples(self):
+
+        if not self.parser.configs:
+            return self.samples
+
+        self.samples = copy.deepcopy(self.parser.configs)
+
+        for type_name in self.parser.configs:
+            self.samples[type_name]['port'] = {}
+            for backend_name in ('AT', 'ADB'): # in order
+                if backend_name == 'AT':
+                    conf = {
+                        'type_name' : type_name,
+                        'mapto'     : type_name,
+                        'backend'   : backend_name,
+                        'dev_link'  : '/dev/' + self.samples[type_name][backend_name],
+                        'serial_id' : self.samples[type_name]["serial"],}
+
+                    if not subprocess.call("lsof {where}".format(where = '/dev/' + self.samples[type_name][backend_name]), shell=True):
+                        self.samples[type_name]['port']['status'] = "BUSY"
+                    else:
+                        self.samples[type_name]['port']['status'] = "READY"
+
+                    at = self.factory.which_backend(backend_name, type_name, conf)
+                    if type_name == "DUT1":
+                        self.samples[type_name]['port'][backend_name] = at.DUT1
+                    if type_name == "DUT2":
+                        self.samples[type_name]['port'][backend_name] = at.DUT2
+
+                if backend_name == 'ADB':
+                    conf = {
+                        'type_name' : type_name,
+                        'mapto'     : type_name,
+                        'backend'   : backend_name,
+                        'serial_id' : self.samples[type_name]["serial"],}
+
+                    adb = self.factory.which_backend(backend_name, type_name, conf)
+                    if type_name == 'DUT1':
+                        self.samples[type_name]['port'][backend_name] = adb.DUT1
+                    if type_name == 'DUT2':
+                        self.samples[type_name]['port'][backend_name] = adb.DUT2
+
+        return self.samples
+

@@ -8,7 +8,7 @@ allure version == 2.5.0
 
 import os, re
 from ft_utils.log import Log,peer
-from ft_utils.port import Port
+from ft_utils.port import Port,PortProber
 
 hook_log = None
 
@@ -30,8 +30,7 @@ class ACISMiscer():
         Returns:
             none
         """
-        #self.limit_name = 'testcases' # Maybe get this var from environment better.
-        self.limit_name = 'cases' # Maybe get this var from environment better.
+        self.limit_name = 'ft' # Maybe get this var from environment better.
 
         try:
             self.prefix = os.environ["REPORT_PATH"] + '/' \
@@ -79,6 +78,7 @@ class ACISMiscer():
 
         self.envs['Test_Date']  = os.environ['ACIS_DIFF']
         self.envs['Test_Times'] = os.environ['TIMES']
+        self.envs['Description'] = os.environ['DESCRIPTION']
 
         filesvr_url = 'http://cnshz-ed-svr098/ACIS-IntegrationTest-Reports/' # end of '/'
 
@@ -98,6 +98,56 @@ class ACISMiscer():
         self.envs['Test_IR_Report'] = filesvr_url + '/'.join(partial_slice[:diff_location]) + report_suffix
 
 
+    def echo_slave_info(self):
+        import subprocess
+        output_format = "<slave info> [{:<25s}]: [status:{:<4d}] [{}]"
+        self.log("<SLAVE INFORMATION RECORD BEG>")
+
+        status, hostname = subprocess.getstatusoutput('hostname')
+        self.log(output_format.format('hostname', status, hostname))
+
+        status, ip = subprocess.getstatusoutput('/sbin/ifconfig -a | grep inet | grep -v 127.0.0.1 | grep -v inet6 | awk \'{print $2}\' | tr -d "addr"')
+        self.log(output_format.format('ip', status, ip))
+
+        status, mac = subprocess.getstatusoutput('cat /sys/class/net/eth0/address')
+        self.log(output_format.format('mac_eth0', status, mac))
+
+        status, pi_time = subprocess.getstatusoutput('date +%Y_%m_%d_%H_%M_%S')
+        self.log(output_format.format('pi_time', status, pi_time))
+
+        status, bootup_time = subprocess.getstatusoutput('uptime -s')
+        self.log(output_format.format('bootup_time', status, bootup_time))
+
+        status, mem_total = subprocess.getstatusoutput('grep MemTotal /proc/meminfo | awk \'{print $2" "$3}\'')
+        self.log(output_format.format('mem_total', status, mem_total))
+
+        status, mem_available = subprocess.getstatusoutput('grep MemAvailable /proc/meminfo | awk \'{print $2" "$3}\'')
+        self.log(output_format.format('mem_available', status, mem_available))
+
+        status, mem_free = subprocess.getstatusoutput('grep MemFree /proc/meminfo | awk \'{print $2" "$3}\'')
+        self.log(output_format.format('mem_free', status, mem_free))
+
+        status, swap_total = subprocess.getstatusoutput('grep SwapTotal /proc/meminfo | awk \'{print $2" "$3}\'')
+        self.log(output_format.format('swap_total', status, swap_total))
+
+        status, swap_free = subprocess.getstatusoutput('grep SwapFree /proc/meminfo | awk \'{print $2" "$3}\'')
+        self.log(output_format.format('swap_free', status, swap_free))
+
+        status, slave_workspace = subprocess.getstatusoutput('du -sh $HOME/workspace | awk \'{print $1}\'')
+        self.log(output_format.format('slave_workspace', status, slave_workspace))
+
+        status, slave_root_space_total = subprocess.getstatusoutput('df -kh $HOME | grep "/dev/root" | awk \'{print $2}\'')
+        self.log(output_format.format('slave_root_space_total', status, slave_root_space_total))
+
+        status, slave_root_space_used = subprocess.getstatusoutput('df -kh $HOME | grep "/dev/root" | awk \'{print $3}\'')
+        self.log(output_format.format('slave_root_space_used', status, slave_root_space_used))
+
+        status, slave_root_space_avail = subprocess.getstatusoutput('df -kh $HOME | grep "/dev/root" | awk \'{print $4}\'')
+        self.log(output_format.format('slave_root_space_avail', status, slave_root_space_avail))
+
+        self.log("<SLAVE INFORMATION RECORD END>\n")
+
+
     def deal_misc(self, log_file, logger_name, port_names):
         """
         Deal with the misc information from the testcases, init the misc for use by testcase
@@ -115,6 +165,7 @@ class ACISMiscer():
         hook_log = self.log = Log(self.deal_log_path(log_file), logger_name = logger_name)
         self.register_port(port_names)
         self.deal_envs()
+        self.echo_slave_info()
         return self
 
     def order_port_list(self,port_names):
@@ -170,3 +221,9 @@ class ACISMiscer():
                 self.adb = backend
             else:
                 pass
+
+    def probe_port(self):
+        global hook_log
+        hook_log = self.log = Log(log_path = '/tmp/drop.log')
+        return PortProber().get_samples()
+
